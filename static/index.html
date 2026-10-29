@@ -1,0 +1,1672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Only Chat</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b;
+    --text: #e6e8ee; --muted: #8b93a7; --accent: #5b8cff;
+    --user: #24304a; --border: #262b36; --ok: #3ecf8e; --bad: #ff8080;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; height: 100dvh; display: flex; overflow: hidden;
+    font: 15px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  /* ---------- sidebar ---------- */
+  aside {
+    width: 260px; flex-shrink: 0; background: var(--panel);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  }
+  aside header { padding: 14px; border-bottom: 1px solid var(--border); }
+  aside h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; }
+  button {
+    font: inherit; cursor: pointer; border: 0; border-radius: 8px;
+    background: var(--panel-2); color: var(--text); padding: 9px 12px;
+  }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+  summary:focus-visible, .item:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  button:hover { background: #252b36; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .primary { background: var(--accent); color: #fff; font-weight: 600; }
+  .primary:hover:not(:disabled) { background: #4a7bf0; }
+  #new { width: 100%; }
+  #chatListTitle { padding: 10px 14px 0; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  #list { flex: 1; overflow-y: auto; padding: 8px; }
+  .item {
+    padding: 2px; border-radius: 8px; cursor: pointer;
+    display: flex; gap: 4px; align-items: center; margin-bottom: 2px;
+  }
+  .item:hover { background: var(--panel-2); }
+  .item.active { background: var(--user); }
+  .item .conversation-open {
+    display: flex; flex: 1; min-width: 0; gap: 6px; align-items: center;
+    padding: 7px 8px; background: transparent; text-align: left;
+  }
+  .item .conversation-open:hover { background: transparent; }
+  .item .meta { flex: 1; min-width: 0; }
+  .item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; }
+  .item .p { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .x {
+    display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center;
+    color: var(--muted); opacity: 0; font-size: 15px; padding: 0; background: transparent;
+  }
+  .item:hover .x { opacity: 1; }
+  .item .x:hover { color: #ff6b6b; }
+  aside footer { padding: 12px 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+  /* ---------- main ---------- */
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .bar {
+    display: flex; gap: 8px; align-items: center; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap;
+  }
+  input, select {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 7px 11px; font: inherit;
+    font-size: 13px;
+  }
+  input:focus, select:focus { outline: 1px solid var(--accent); }
+  #provider { max-width: 200px; }
+  #mode { max-width: 120px; }
+  #skillSelect { max-width: 150px; }
+  #skillPreview { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); }
+  #model { flex: 1; min-width: 160px; }
+  .bar button { font-size: 13px; padding: 7px 11px; }
+  #filesToggle { display: none; }
+  #mobileMenu { display: none; }
+  .drawer-backdrop { display: none; }
+  .workspace-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+  .workspace-switch button { background: transparent; padding: 5px 10px; font-size: 12px; }
+  .workspace-switch button.active { background: var(--panel-2); color: var(--text); }
+  #status { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
+  #status.bad { color: var(--bad); }
+  #dailyQuota { display: none; padding: 8px 24px; border-bottom: 1px solid var(--border); }
+  #dailyQuotaMeta { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  #dailyQuotaBarWrap { height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+  #dailyQuotaBar { width: 0%; height: 100%; background: linear-gradient(90deg, #5ee7a7, #8ad0ff); }
+  #workspacePanel { flex: 0 0 auto; max-height: 42vh; min-height: 0; overflow-y: auto; border-bottom: 1px solid var(--border); background: var(--panel); }
+  .workspace-head { display: flex; align-items: center; gap: 10px; padding: 7px 16px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+  .workspace-head strong { color: var(--text); font-weight: 600; }
+  #workspaceCount { flex: 1; }
+  .workspace-body { display: grid; grid-template-columns: minmax(180px, 30%) minmax(0, 1fr); min-height: 0; height: min(218px, 27vh); }
+  #workspaceFiles { overflow: auto; border-right: 1px solid var(--border); padding: 5px; }
+  .workspace-dir { margin: 0; }
+  .workspace-dir summary { list-style: none; cursor: pointer; color: var(--muted); font-size: 12px; padding: 5px 7px; }
+  .workspace-dir summary::-webkit-details-marker { display: none; }
+  .workspace-dir summary::before { content: "+ "; color: var(--accent); }
+  .workspace-dir[open] > summary::before { content: "- "; }
+  .workspace-file { display: block; width: 100%; text-align: left; font-size: 12px; padding: 5px 8px; border-radius: 4px; background: transparent; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .workspace-file.active { background: var(--user); }
+  #workspacePreview { margin: 0; overflow: auto; padding: 10px 12px; color: var(--text); font: 12px/1.5 ui-monospace, Consolas, monospace; white-space: pre; }
+  #workspacePreviewPath { padding: 5px 12px 0; color: var(--muted); font: 11px/1.4 ui-monospace, Consolas, monospace; }
+  #projectPath { min-width: 180px; flex: 1; }
+  .workspace-extras { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(220px, 1fr); gap: 12px; padding: 8px 12px; border-top: 1px solid var(--border); }
+  .workspace-extra-title { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  .command-controls { display: flex; gap: 6px; align-items: flex-start; }
+  #commandInput { flex: 1; min-width: 0; }
+  #commandOutput { max-height: 110px; overflow: auto; white-space: pre-wrap; margin: 6px 0 0; padding: 7px; background: #0b0d11; color: var(--muted); font: 11px/1.45 ui-monospace, Consolas, monospace; }
+  #editHistory { max-height: 118px; overflow: auto; }
+  .edit-history-item { display: flex; justify-content: space-between; gap: 6px; align-items: center; padding: 3px 0; font-size: 11px; }
+  .edit-history-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .edit-history-item button { padding: 3px 7px; font-size: 11px; }
+  #usageBox { display: none; flex: 0 0 auto; padding: 0 24px 8px; }
+  #usageBarWrap { display: none; }
+  #usageBar { width: 0%; height: 100%; background: linear-gradient(90deg, #5ee7a7, #8ad0ff); }
+  #usageMeta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 5px; }
+  #feed { flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 24px; }
+  .msg { max-width: 780px; margin: 0 auto 18px; display: flex; gap: 12px; }
+  .who {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 12px; font-weight: 700;
+    background: var(--panel-2); color: var(--muted);
+  }
+  .msg.user .who { background: var(--user); color: #a9c0ff; }
+  .body { flex: 1; min-width: 0; }
+  .body p { margin: 0 0 10px; }
+  .body p:last-child { margin-bottom: 0; }
+  .body pre {
+    background: #0b0d11; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; overflow-x: auto; font-size: 13px;
+  }
+  .body code { font-family: ui-monospace, "SF Mono", Consolas, monospace; }
+  .body :not(pre) > code {
+    background: var(--panel-2); padding: 1px 5px; border-radius: 4px; font-size: 13px;
+  }
+  .body ul, .body ol { padding-left: 22px; }
+  .body table { border-collapse: collapse; margin: 0 0 10px; }
+  .body th, .body td { border: 1px solid var(--border); padding: 5px 10px; text-align: left; }
+  .empty { flex: 1; display: grid; place-items: center; color: var(--muted); text-align: center; }
+  /* ---------- composer ---------- */
+  .composer { border-top: 1px solid var(--border); background: var(--panel); padding: 14px 24px 18px; }
+  .composer .inner { max-width: 780px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end; }
+  textarea {
+    flex: 1; resize: none; min-height: 46px; max-height: 200px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); padding: 12px 14px; font: inherit;
+  }
+  textarea:focus { outline: 1px solid var(--accent); }
+  #send { padding: 12px 20px; }
+  .err { color: var(--bad); font-size: 13px; white-space: pre-wrap; }
+  .edit-review { margin-top: 12px; border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 12px; background: var(--panel); }
+  .edit-review h3 { margin: 0 0 8px; font-size: 13px; }
+  .edit-review details { margin: 6px 0; }
+  .edit-review summary { cursor: pointer; font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
+  .edit-review pre { max-height: 220px; overflow: auto; white-space: pre; font: 11px/1.5 ui-monospace, Consolas, monospace; }
+  .edit-review .review-actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .edit-review .review-status { color: var(--muted); font-size: 12px; }
+  /* ---------- providers modal ---------- */
+  #modal, #skillsModal {
+    position: fixed; inset: 0; background: rgba(5,7,10,.7); display: none;
+    align-items: flex-start; justify-content: center; padding: 6vh 16px; z-index: 10;
+    overflow-y: auto;
+  }
+  #modal.open, #skillsModal.open { display: flex; }
+  .sheet {
+    width: 100%; max-width: 560px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+  .sheet h2 { margin: 0; font-size: 18px; }
+  .sheet .sub { color: var(--muted); font-size: 13px; margin: 2px 0 16px; }
+  .sheet .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .close { background: none; color: var(--muted); font-size: 20px; padding: 0 6px; }
+  .card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+    margin-bottom: 10px; background: var(--panel-2);
+  }
+  .card.active { border-color: var(--accent); }
+  .card .row { display: flex; align-items: center; gap: 8px; }
+  .card .name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #2a303c; color: var(--muted); }
+  .badge.on { background: rgba(62,207,142,.15); color: var(--ok); }
+  .card dl { margin: 8px 0 10px; display: grid; grid-template-columns: 70px 1fr; gap: 2px 8px; font-size: 12.5px; }
+  .card dt { color: var(--muted); }
+  .card dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, Consolas, monospace; }
+  .card .actions { display: flex; gap: 6px; }
+  .card .actions button { font-size: 12.5px; padding: 6px 10px; }
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--muted); }
+  .status-pill.ok { background: rgba(62,207,142,.12); color: var(--ok); }
+  .status-pill.bad { background: rgba(255,128,128,.12); color: var(--bad); }
+  .retry-row { display: flex; gap: 8px; margin-top: 10px; }
+  .retry-row button { font-size: 12px; padding: 6px 10px; }
+  .danger:hover { background: #3a2026; color: #ff9a9a; }
+  form label { display: block; font-size: 12.5px; color: var(--muted); margin: 10px 0 4px; }
+  form input, form select, form textarea { width: 100%; }
+  form textarea { resize: vertical; }
+  form .btns { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  #formMsg { font-size: 12.5px; margin-top: 10px; white-space: pre-wrap; }
+  #formMsg.ok { color: var(--ok); } #formMsg.bad { color: var(--bad); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  @media (max-width: 720px) {
+    body { min-width: 320px; }
+    aside {
+      display: flex; position: fixed; z-index: 31; inset: 0 auto 0 0;
+      width: min(86vw, 340px); height: 100vh; height: 100dvh;
+      box-shadow: 16px 0 48px rgba(0,0,0,.4);
+      transform: translateX(-105%); visibility: hidden;
+      transition: transform .2s ease, visibility .2s ease;
+    }
+    aside.open { transform: translateX(0); visibility: visible; }
+    .drawer-backdrop {
+      position: fixed; z-index: 30; inset: 0; display: block;
+      width: 100%; height: 100%; padding: 0; border-radius: 0;
+      background: rgba(5,7,10,.62);
+    }
+    .drawer-backdrop[hidden] { display: none; }
+    #mobileMenu {
+      display: inline-grid; flex: 0 0 44px; width: 44px; height: 44px;
+      place-items: center; padding: 0; font-size: 20px;
+    }
+    main { min-height: 0; width: 100%; }
+    .bar { gap: 7px; padding: 8px; }
+    .workspace-switch { flex: 0 0 auto; }
+    .workspace-switch button { min-height: 40px; padding: 7px 10px; }
+    #provider { flex: 1 1 110px; min-width: 0; max-width: none; min-height: 40px; }
+    #mode, #skillSelect { flex: 1 1 110px; min-width: 0; max-width: none; min-height: 40px; }
+    #model { flex: 1 1 100%; min-width: 0; min-height: 40px; }
+    #skillPreview { flex: 1 1 100%; max-width: none; }
+    .bar > button:not(#mobileMenu) { min-height: 40px; }
+    #status { flex: 1 1 100%; max-width: 100%; min-height: 18px; }
+    .item .conversation-open { min-height: 44px; }
+    .item .x { flex-basis: 44px; width: 44px; height: 44px; opacity: 1; }
+    #dailyQuota { padding: 8px 12px; }
+    #usageBox { padding: 0 12px 8px; }
+    #feed { padding: 14px 10px; }
+    .msg { gap: 8px; margin-bottom: 14px; }
+    .who { width: 28px; height: 28px; }
+    .body pre { max-width: 100%; }
+    .body table { display: block; max-width: 100%; overflow-x: auto; }
+    .composer {
+      padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+    }
+    .composer .inner { gap: 8px; }
+    textarea { min-height: 44px; max-height: 150px; padding: 10px 12px; font-size: 16px; }
+    #send { min-width: 68px; min-height: 44px; padding: 8px 12px; }
+    #workspacePanel { max-height: 48dvh; }
+    .workspace-extras { grid-template-columns: 1fr; }
+    .workspace-head { flex-wrap: wrap; padding: 8px 10px; }
+    #projectPath { min-width: 0; flex: 1 1 100%; min-height: 40px; }
+    .workspace-body { display: flex; flex-direction: column; height: auto; }
+    #workspaceFiles { max-height: 120px; border-right: 0; border-bottom: 1px solid var(--border); }
+    #workspacePreview { max-height: 150px; }
+    .workspace-extras { padding: 8px 10px; }
+    .edit-history-item button, .command-controls button { min-height: 40px; }
+    #modal, #skillsModal { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); }
+    .sheet { max-height: calc(100dvh - 20px); overflow-y: auto; border-radius: 12px; padding: 16px; }
+    .card .actions { flex-wrap: wrap; }
+    .card .actions button { min-height: 40px; }
+  }
+  @media (max-width: 380px) {
+    .workspace-switch button { padding-inline: 8px; font-size: 11px; }
+    #provider { flex-basis: 95px; }
+    #mode, #skillSelect { flex-basis: 95px; }
+    #fetch { font-size: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    aside { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<button id="drawerBackdrop" class="drawer-backdrop" type="button" aria-label="Close conversation list" hidden></button>
+<aside id="conversationDrawer" aria-label="Conversations">
+  <header>
+    <h1>My Only Chat</h1>
+    <button id="new" class="primary">+ New chat</button>
+  </header>
+  <div id="chatListTitle" class="list-title">Chat conversations</div>
+  <div id="list"></div>
+  <footer id="footer">Select a chat to view its token usage</footer>
+</aside>
+
+<main>
+  <div class="bar">
+    <button id="mobileMenu" type="button" aria-label="Open conversation list" aria-controls="conversationDrawer" aria-expanded="false">☰</button>
+    <div class="workspace-switch" role="group" aria-label="Workspace">
+      <button id="chatWorkspace" class="active" aria-pressed="true">Chat</button>
+      <button id="codingWorkspace" aria-pressed="false">Coding</button>
+    </div>
+    <select id="provider" title="API provider"></select>
+    <select id="mode" title="Mode">
+      <option value="default">Default</option>
+      <option value="fast">Fast</option>
+      <option value="free">Free</option>
+      <option value="balanced">Balanced</option>
+    </select>
+    <select id="skillSelect" title="Automatic or manually selected skill">
+      <option value="">Automatic skill</option>
+    </select>
+    <span id="skillPreview" aria-live="polite">Auto: no matching skill</span>
+    <input id="model" list="modelList" placeholder="model id" autocomplete="off">
+    <datalist id="modelList"></datalist>
+    <button id="fetch" title="Fetch models for this provider">↻ Models</button>
+    <button id="filesToggle" title="Project files">Files</button>
+    <button id="manageSkills" type="button">Skills</button>
+    <button id="manage">Providers</button>
+    <span id="status"></span>
+  </div>
+  <section id="workspacePanel" hidden>
+    <div class="workspace-head">
+      <strong id="workspaceRoot">Project files</strong>
+      <input id="projectPath" aria-label="Project folder path" placeholder="Full path, e.g. C:\Users\you\my-project" title="Enter the full local path to your project folder">
+      <button id="openProject" type="button">Open project</button>
+      <span id="workspaceCount"></span>
+      <button id="refreshWorkspace" title="Refresh files">↻</button>
+    </div>
+    <div class="workspace-body">
+      <div id="workspaceFiles"></div>
+      <div>
+        <div id="workspacePreviewPath"></div>
+        <pre id="workspacePreview"></pre>
+      </div>
+    </div>
+    <div class="workspace-extras">
+      <div>
+        <div class="workspace-extra-title">Approved project command</div>
+        <div class="command-controls">
+          <input id="commandInput" aria-label="Allowlisted command" placeholder="python -m pytest">
+          <button id="runCommand" type="button">Run</button>
+        </div>
+        <pre id="commandOutput" hidden></pre>
+      </div>
+      <div>
+        <div class="workspace-extra-title">Applied edit history</div>
+        <div id="editHistory" class="small">No applied edits</div>
+      </div>
+    </div>
+  </section>
+  <div id="dailyQuota" aria-live="polite">
+    <div id="dailyQuotaMeta"><span id="dailyQuotaLabel">Daily provider usage</span><span id="dailyQuotaValue"></span></div>
+    <div id="dailyQuotaBarWrap"><div id="dailyQuotaBar"></div></div>
+  </div>
+  <div id="usageBox">
+    <div id="usageBarWrap"><div id="usageBar"></div></div>
+    <div id="usageMeta"><span>Session token usage</span><span id="usageValue">—</span></div>
+  </div>
+  <div id="feed"><div class="empty">Start a conversation.</div></div>
+  <div class="composer">
+    <div class="inner">
+      <textarea id="input" rows="1" placeholder="Message…  (Enter to send, Shift+Enter for newline)"></textarea>
+      <button id="send" class="primary">Send</button>
+    </div>
+  </div>
+</main>
+
+<div id="modal">
+  <div class="sheet">
+    <div class="top">
+      <div>
+        <h2>API Providers</h2>
+        <div class="sub">Manage your providers and choose which one to use.</div>
+      </div>
+      <button class="close" id="closeModal" title="Close">×</button>
+    </div>
+
+    <div id="cards"></div>
+    <button id="addProvider" class="primary">+ Add API provider</button>
+
+    <form id="pform" hidden autocomplete="off">
+      <h2 id="formTitle" style="margin-top:18px">Add API provider</h2>
+      <label for="fPreset">Preset</label>
+      <select id="fPreset">
+        <option value="">Custom (any OpenAI-compatible API)</option>
+      </select>
+      <label for="fName">Name</label>
+      <input id="fName" placeholder="e.g. Chatbox AI" required>
+      <label for="fUrl">API URL</label>
+      <input id="fUrl" placeholder="https://api.example.com/v1" required>
+      <div class="hint">The base URL that ends before <code>/chat/completions</code>.</div>
+      <label for="fKey">API key</label>
+      <input id="fKey" type="password" placeholder="sk-…">
+      <div class="hint" id="keyHint">Encrypted before storage. Leave blank for local servers.</div>
+      <label for="fKeys">API keys list</label>
+      <textarea id="fKeys" rows="4" placeholder="One key per line
+sk-...
+sk-..."></textarea>
+      <div class="hint">Use one key per line. Optional: each key can have a token budget below.</div>
+      <label for="fBudget">Token budget per key</label>
+      <input id="fBudget" type="number" min="0" step="100000" placeholder="20000000">
+      <div class="hint">Set the token allowance for each key, e.g. 20000000 for 20M tokens.</div>
+      <label for="fModel">Default model</label>
+      <input id="fModel" list="formModels" placeholder="Pick after testing, or type an id">
+      <datalist id="formModels"></datalist>
+      <div class="btns">
+        <button type="button" id="fTest">Test connection</button>
+        <button type="submit" class="primary" id="fSave">Save</button>
+        <button type="button" id="fCancel">Cancel</button>
+      </div>
+      <div id="formMsg"></div>
+    </form>
+  </div>
+</div>
+
+<div id="skillsModal" aria-modal="true" role="dialog" aria-labelledby="skillsTitle">
+  <div class="sheet">
+    <div class="top">
+      <div>
+        <h2 id="skillsTitle">Skills</h2>
+        <div class="sub">Choose which prompt-specialized skills can match your messages.</div>
+      </div>
+      <button class="close" id="closeSkillsModal" title="Close">×</button>
+    </div>
+    <div id="skillCards"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const feed = $("feed"), list = $("list"), input = $("input"),
+      sendBtn = $("send"), statusEl = $("status"), footer = $("footer"),
+      providerSel = $("provider"), modelEl = $("model");
+
+let currentId = null;
+let streaming = false;
+let convTokens = 0;
+let convInputTokens = 0;
+let convOutputTokens = 0;
+let providers = [];
+let currentProviderId = null;   // provider the visible chat talks to
+let editingId = null;           // provider being edited in the form
+let codingMode = false;
+let codingAvailable = true;
+let conversationLoadVersion = 0;
+let workspaceLoadVersion = 0;
+let skills = [];
+const modelCache = {};          // provider id -> [model ids]
+const conversationDrawer = $("conversationDrawer");
+const mobileMenu = $("mobileMenu");
+const drawerBackdrop = $("drawerBackdrop");
+const CODING_SYSTEM_PROMPT = "You are a senior software engineering assistant. Focus on implementation, debugging, code review, and explaining technical tradeoffs. Ask for the smallest missing context when necessary. Prefer concrete, minimal changes, include complete code or unified diffs when useful, and suggest focused tests. Never claim to have edited or run project files unless the user supplied the result.";
+
+function closeConversationDrawer(restoreFocus = false) {
+  conversationDrawer.classList.remove("open");
+  drawerBackdrop.hidden = true;
+  mobileMenu.setAttribute("aria-expanded", "false");
+  if (restoreFocus) mobileMenu.focus();
+}
+
+function openConversationDrawer() {
+  conversationDrawer.classList.add("open");
+  drawerBackdrop.hidden = false;
+  mobileMenu.setAttribute("aria-expanded", "true");
+  $("new").focus();
+}
+
+mobileMenu.onclick = () => {
+  if (conversationDrawer.classList.contains("open")) {
+    closeConversationDrawer();
+  } else {
+    openConversationDrawer();
+  }
+};
+drawerBackdrop.onclick = () => closeConversationDrawer(true);
+
+const PRESETS = [
+  ["Oxion AI",      "https://oxionai.com/v1"],
+  ["OpenAI",        "https://api.openai.com/v1"],
+  ["OpenRouter",    "https://openrouter.ai/api/v1"],
+  ["Groq",          "https://api.groq.com/openai/v1"],
+  ["DeepSeek",      "https://api.deepseek.com/v1"],
+  ["Mistral",       "https://api.mistral.ai/v1"],
+  ["Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai"],
+  ["Ollama (local)",    "http://localhost:11434/v1"],
+  ["LM Studio (local)", "http://localhost:1234/v1"],
+];
+
+/* ---------------- helpers ---------------- */
+marked.setOptions({ breaks: true, gfm: true });
+function render(text) {
+  return DOMPurify.sanitize(marked.parse(text || ""));
+}
+
+function setStatus(text, bad = false) {
+  statusEl.textContent = text;
+  statusEl.title = text;
+  statusEl.classList.toggle("bad", bad);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json" }, ...opts,
+  });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (!res.ok) {
+    const d = data && data.detail;
+    const msg = typeof d === "string" ? d
+      : Array.isArray(d) ? d.map((e) => e.msg).join("; ")
+      : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+const providerById = (id) => providers.find((p) => p.id === id);
+const activeProvider = () => providers.find((p) => p.is_active) || providers[0];
+const usageBar = document.getElementById("usageBar");
+const usageValue = document.getElementById("usageValue");
+const usageBox = document.getElementById("usageBox");
+
+function matchingSkill(task) {
+  return skills
+    .filter((skill) => skill.enabled)
+    .sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name))
+    .find((skill) => skill.triggers.some((trigger) => {
+      const escaped = trigger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`(?<!\\w)${escaped}(?!\\w)`, "i").test(task);
+    }));
+}
+
+function updateSkillPreview() {
+  const selected = $("skillSelect").value;
+  const skill = selected
+    ? skills.find((item) => item.name === selected && item.enabled)
+    : matchingSkill(input.value);
+  $("skillPreview").textContent = skill
+    ? `${selected ? "Selected" : "Auto"}: ${skill.name}`
+    : "Auto: no matching skill";
+  $("skillPreview").title = skill?.description || "No skill matches this message";
+}
+
+async function loadSkills() {
+  const selected = $("skillSelect").value;
+  skills = await api("/api/skills");
+  const selector = $("skillSelect");
+  selector.replaceChildren(new Option("Automatic skill", ""));
+  for (const skill of skills.filter((item) => item.enabled)) {
+    selector.add(new Option(skill.name, skill.name));
+  }
+  selector.value = skills.some((skill) => skill.name === selected && skill.enabled)
+    ? selected
+    : "";
+  renderSkills();
+  updateSkillPreview();
+}
+
+function renderSkills() {
+  const cards = $("skillCards");
+  cards.replaceChildren();
+  if (!skills.length) {
+    cards.textContent = "No skills are available.";
+    return;
+  }
+  for (const skill of skills) {
+    const card = document.createElement("section");
+    card.className = "card" + (skill.enabled ? " active" : "");
+    const row = document.createElement("div");
+    row.className = "row";
+    const name = document.createElement("strong");
+    name.className = "name";
+    name.textContent = skill.name;
+    const state = document.createElement("span");
+    state.className = `badge${skill.enabled ? " on" : ""}`;
+    state.textContent = skill.enabled ? "Enabled" : "Disabled";
+    row.append(name, state);
+    const description = document.createElement("p");
+    description.className = "sub";
+    description.textContent = skill.description;
+    const triggers = document.createElement("p");
+    triggers.className = "hint";
+    triggers.textContent = `Triggers: ${skill.triggers.join(", ")}`;
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.textContent = skill.enabled ? "Deactivate" : "Activate";
+    toggle.onclick = async () => {
+      toggle.disabled = true;
+      try {
+        await api(`/api/skills/${encodeURIComponent(skill.name)}/${skill.enabled ? "deactivate" : "activate"}`, { method: "POST" });
+        await loadSkills();
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        toggle.disabled = false;
+      }
+    };
+    card.append(row, description, triggers, toggle);
+    cards.appendChild(card);
+  }
+}
+
+function updateUsageBar(tokensUsed = convTokens) {
+  const safeUsed = Math.max(0, Number(tokensUsed) || 0);
+  usageValue.textContent =
+    `~${convInputTokens.toLocaleString()} input + ` +
+    `${convOutputTokens.toLocaleString()} output = ` +
+    `${safeUsed.toLocaleString()} tokens`;
+  usageBox.style.display = safeUsed > 0 || providers.length ? "block" : "none";
+}
+
+async function loadDailyQuota(pid = currentProviderId) {
+  const box = $("dailyQuota");
+  if (!pid) { box.style.display = "none"; return; }
+  try {
+    const usage = await api(`/api/providers/${pid}/usage`);
+    const budget = Number(usage.token_budget || 0);
+    if (!budget) { box.style.display = "none"; return; }
+    const used = Math.max(0, Number(usage.tokens_used || 0));
+    $("dailyQuotaLabel").textContent = `${providerById(pid)?.name || "Provider"} daily tokens`;
+    $("dailyQuotaValue").textContent = `${used.toLocaleString()} / ${budget.toLocaleString()} · resets ${usage.reset_at}`;
+    $("dailyQuotaBar").style.width = `${Math.min(100, (used / budget) * 100)}%`;
+    box.style.display = "block";
+  } catch {
+    box.style.display = "none";
+  }
+}
+
+async function loadWorkspaceTree() {
+  const fileList = $("workspaceFiles");
+  const loadVersion = ++workspaceLoadVersion;
+  const requestedConversationId = currentId;
+  fileList.replaceChildren();
+  try {
+    const query = currentId ? `?conv_id=${encodeURIComponent(currentId)}` : "";
+    const data = await api(`/api/workspace/tree${query}`);
+    if (
+      loadVersion !== workspaceLoadVersion ||
+      requestedConversationId !== currentId ||
+      !codingMode
+    ) return;
+    $("workspaceRoot").textContent = data.root;
+    $("projectPath").value = data.project_root || "";
+    $("workspaceCount").textContent = `${data.files.length} files in AI context${data.omitted_count ? ` · ${data.omitted_count} omitted` : ""}`;
+    const root = { folders: new Map(), files: [] };
+    for (const file of data.files) {
+      const parts = file.path.split("/");
+      let folder = root;
+      for (const part of parts.slice(0, -1)) {
+        if (!folder.folders.has(part)) folder.folders.set(part, { folders: new Map(), files: [] });
+        folder = folder.folders.get(part);
+      }
+      folder.files.push({ name: parts.at(-1), path: file.path });
+    }
+
+    function renderFolder(folder, container, depth = 0) {
+      for (const [name, child] of [...folder.folders].sort(([a], [b]) => a.localeCompare(b))) {
+        const details = document.createElement("details");
+        details.className = "workspace-dir";
+        details.open = true;
+        const summary = document.createElement("summary");
+        summary.textContent = name;
+        summary.style.paddingLeft = `${7 + depth * 12}px`;
+        details.appendChild(summary);
+        renderFolder(child, details, depth + 1);
+        container.appendChild(details);
+      }
+      for (const file of folder.files.sort((a, b) => a.name.localeCompare(b.name))) {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "workspace-file";
+        row.style.paddingLeft = `${12 + depth * 12}px`;
+        row.textContent = file.name;
+        row.title = file.path;
+        row.onclick = () => openWorkspaceFile(file.path, row);
+        container.appendChild(row);
+      }
+    }
+
+    renderFolder(root, fileList);
+    if (!data.files.length) fileList.textContent = "No readable files";
+  } catch (err) {
+    if (
+      loadVersion !== workspaceLoadVersion ||
+      requestedConversationId !== currentId ||
+      !codingMode
+    ) return;
+    $("workspaceRoot").textContent = "No project selected";
+    $("projectPath").value = "";
+    $("workspaceCount").textContent = "";
+    $("workspacePreviewPath").textContent = "";
+    $("workspacePreview").textContent = "";
+    fileList.textContent = currentId
+      ? "Open a project for this Coding chat to browse files."
+      : "Create a Coding chat, then open its project.";
+  }
+}
+
+async function openWorkspaceFile(path, row) {
+  const requestedConversationId = currentId;
+  try {
+    const query = new URLSearchParams({ path });
+    if (requestedConversationId) query.set("conv_id", requestedConversationId);
+    const file = await api(`/api/workspace/file?${query}`);
+    if (requestedConversationId !== currentId || !codingMode) return;
+    document.querySelectorAll(".workspace-file.active").forEach((item) => item.classList.remove("active"));
+    row.classList.add("active");
+    $("workspacePreviewPath").textContent = file.path;
+    $("workspacePreview").textContent = file.content;
+  } catch (err) {
+    setStatus(err.message, true);
+  }
+}
+
+async function loadEditHistory() {
+  const history = $("editHistory");
+  if (!currentId) {
+    history.textContent = "Create or open a chat to view its edit history.";
+    return;
+  }
+  try {
+    const edits = await api(`/api/conversations/${encodeURIComponent(currentId)}/edits`);
+    history.replaceChildren();
+    if (!edits.length) {
+      history.textContent = "No applied edits";
+      return;
+    }
+    for (const edit of edits) {
+      const row = document.createElement("div");
+      row.className = "edit-history-item";
+      const label = document.createElement("span");
+      label.textContent = `${edit.file_path} · ${new Date(edit.applied_at * 1000).toLocaleString()}`;
+      label.title = label.textContent;
+      const undo = document.createElement("button");
+      undo.type = "button";
+      undo.textContent = edit.undone_at ? "Undone" : "Undo";
+      undo.disabled = Boolean(edit.undone_at);
+      undo.onclick = async () => {
+        if (!confirm(`Undo the applied edit to ${edit.file_path}?`)) return;
+        undo.disabled = true;
+        try {
+          await api(
+            `/api/conversations/${encodeURIComponent(currentId)}/edits/${edit.id}/undo`,
+            { method: "POST", body: JSON.stringify({ approved: true }) },
+          );
+          await loadWorkspaceTree();
+          await loadEditHistory();
+        } catch (error) {
+          setStatus(error.message, true);
+          undo.disabled = false;
+        }
+      };
+      row.append(label, undo);
+      history.appendChild(row);
+    }
+  } catch (error) {
+    history.textContent = error.message;
+  }
+}
+
+async function runApprovedCommand() {
+  const command = $("commandInput").value.trim();
+  if (!command) {
+    setStatus("Enter an allowlisted command first", true);
+    return;
+  }
+  if (!currentId) await newConversation();
+  if (!confirm(`Run this allowlisted command in the selected project?\n\n${command}`)) return;
+  const button = $("runCommand");
+  const output = $("commandOutput");
+  button.disabled = true;
+  output.hidden = false;
+  output.textContent = "Queueing command…";
+  try {
+    const queued = await api(
+      `/api/conversations/${encodeURIComponent(currentId)}/commands`,
+      {
+        method: "POST",
+        body: JSON.stringify({ command, approved: true }),
+      },
+    );
+    for (let attempt = 0; attempt < 600; attempt += 1) {
+      const result = await api(
+        `/api/commands/${encodeURIComponent(queued.job_id)}?conv_id=${encodeURIComponent(currentId)}`,
+      );
+      output.textContent = `${result.status}${result.exit_code === null ? "" : ` · exit ${result.exit_code}`}\n${result.output || ""}`;
+      if (result.status === "completed" || result.status === "failed") return;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    output.textContent += "\nStill running; refresh the command status later.";
+  } catch (error) {
+    output.textContent = error.message;
+    setStatus(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function modelPriority(models, preferred) {
+  for (const key of preferred) {
+    const found = models.find((m) => String(m).toLowerCase() === key.toLowerCase());
+    if (found) return found;
+  }
+  for (const key of preferred) {
+    const found = models.find((m) => String(m).toLowerCase().includes(key.toLowerCase()));
+    if (found) return found;
+  }
+  return null;
+}
+
+function pickModelByMode(models, providerName = "") {
+  const mode = codingMode ? "coding" : (document.getElementById("mode")?.value || "default");
+  const pn = (providerName || "").toLowerCase();
+
+  if (mode === "coding") {
+    if (pn.includes("apinex")) {
+      return modelPriority(models, [
+        "claude-opus-5.5",
+        "gpt-6.1-sol",
+        "free/deepseek-v4.1-flash",
+        "deepseek-coder",
+        "claude-sonnet",
+      ]);
+    }
+    return modelPriority(models, ["claude", "deepseek-coder", "deepseek-r1", "gpt-4.1", "gpt-4o", "code", "sonnet"]);
+  }
+
+  if (mode === "fast") {
+    if (pn.includes("apinex")) {
+      return modelPriority(models, [
+        "free/gpt-6-luna",
+        "free/gemini-3.8-flash",
+        "gpt-6.1-sol",
+        "kimi-k3.1-pro",
+      ]);
+    }
+    return modelPriority(models, ["mini", "flash", "nano", "gemini-2.0-flash", "gpt-4o-mini"]);
+  }
+
+  if (mode === "free") {
+    if (pn.includes("apinex")) {
+      return modelPriority(models, [
+        "free/gemini-3.8-flash",
+        "free/deepseek-v4.1-flash",
+        "free/gpt-6-luna",
+      ]);
+    }
+    return modelPriority(models, ["free", "flash", "mini"]);
+  }
+
+  if (mode === "balanced") {
+    if (pn.includes("apinex")) {
+      return modelPriority(models, [
+        "free/gemini-3.8-flash",
+        "free/deepseek-v4.1-flash",
+        "gpt-6.1-sol",
+      ]);
+    }
+    return modelPriority(models, ["gpt-4o", "claude-3.5", "gemini", "deepseek"]);
+  }
+
+  return null;
+}
+
+/* ---------------- providers: toolbar ---------------- */
+async function loadProviders() {
+  providers = await api("/api/providers");
+  await Promise.all(providers.map(async (p) => {
+    try {
+      const { models = [] } = await api("/api/providers/test", {
+        method: "POST",
+        body: JSON.stringify({ base_url: p.base_url, api_key: "", provider_id: p.id }),
+      });
+      p.valid = true;
+      p.model_count = models.length;
+    } catch (err) {
+      p.valid = false;
+      p.model_count = 0;
+    }
+  }));
+
+  providerSel.innerHTML = "";
+  if (!providers.length) {
+    providerSel.innerHTML = '<option value="">No provider</option>';
+    currentProviderId = null;
+  }
+  for (const p of providers) {
+    const o = document.createElement("option");
+    o.value = p.id;
+    o.textContent = p.name + (p.is_active ? " ★" : "");
+    providerSel.appendChild(o);
+  }
+  if (!providerById(currentProviderId)) currentProviderId = activeProvider()?.id || null;
+  if (currentProviderId) providerSel.value = currentProviderId;
+  renderCards();
+}
+
+function fillModelList(ids) {
+  const dl = $("modelList");
+  dl.innerHTML = "";
+  for (const id of ids) {
+    const o = document.createElement("option");
+    o.value = id;
+    dl.appendChild(o);
+  }
+}
+
+async function loadModels(pid, { force = false, quiet = false } = {}) {
+  if (!pid) { fillModelList([]); return []; }
+  if (modelCache[pid] && !force) { fillModelList(modelCache[pid]); return modelCache[pid]; }
+  if (!quiet) setStatus("loading models…");
+  try {
+    const { models } = await api(`/api/providers/${pid}/models`);
+    modelCache[pid] = models;
+    if (pid === currentProviderId) fillModelList(models);
+    if (!quiet) setStatus(`${models.length} models · ${providerById(pid)?.name || ""}`);
+    return models;
+  } catch (err) {
+    if (!quiet) setStatus(err.message, true);
+    return [];
+  }
+}
+
+async function useProvider(pid, { keepModel = false } = {}) {
+  currentProviderId = pid;
+  providerSel.value = pid || "";
+  const p = providerById(pid);
+  fillModelList(modelCache[pid] || []);
+  if (!keepModel && p?.default_model) modelEl.value = p.default_model;
+  const models = await loadModels(pid, { quiet: keepModel });
+  loadDailyQuota(pid);
+  if (!keepModel && models.length) {
+    const recommended = pickModelByMode(models, p?.name || "");
+    if (recommended) {
+      modelEl.value = recommended;
+      return;
+    }
+  }
+  // the old model may not exist on the new provider
+  if (!keepModel && !p?.default_model && models.length && !models.includes(modelEl.value.trim())) {
+    modelEl.value = models[0];
+  }
+}
+
+const modeSel = document.getElementById("mode");
+modeSel.onchange = () => {
+  const pid = currentProviderId;
+  const p = providerById(pid);
+  const models = modelCache[pid] || [];
+  if (!pid || !models.length) return;
+  const recommended = pickModelByMode(models, p?.name || "");
+  if (recommended) modelEl.value = recommended;
+};
+
+function setWorkspaceMode(isCoding) {
+  if (isCoding && !codingAvailable) {
+    setStatus("Coding workspaces are available only when running locally.", true);
+    isCoding = false;
+  }
+  codingMode = isCoding;
+  localStorage.setItem("assistantWorkspaceType", isCoding ? "coding" : "chat");
+  $("chatWorkspace").classList.toggle("active", !isCoding);
+  $("chatWorkspace").setAttribute("aria-pressed", String(!isCoding));
+  $("codingWorkspace").classList.toggle("active", isCoding);
+  $("codingWorkspace").setAttribute("aria-pressed", String(isCoding));
+  $("filesToggle").style.display = isCoding ? "inline-flex" : "none";
+  $("workspacePanel").hidden = !isCoding;
+  $("new").textContent = isCoding ? "New Coding Chat" : "New Chat";
+  input.placeholder = isCoding
+    ? "Describe the code change, bug, or design…  (Enter to send, Shift+Enter for newline)"
+    : "Message…  (Enter to send, Shift+Enter for newline)";
+  const models = modelCache[currentProviderId] || [];
+  const recommendation = pickModelByMode(models, providerById(currentProviderId)?.name || "");
+  if (recommendation) modelEl.value = recommendation;
+}
+
+async function switchWorkspace(isCoding) {
+  if (isCoding && !codingAvailable) return;
+  if (codingMode === isCoding) return;
+  closeConversationDrawer();
+  conversationLoadVersion += 1;
+  currentId = null;
+  resetFeed();
+  $("projectPath").value = "";
+  $("workspacePreviewPath").textContent = "";
+  $("workspacePreview").textContent = "";
+  setWorkspaceMode(isCoding);
+  await loadList();
+  if (isCoding) {
+    await loadWorkspaceTree();
+    await loadEditHistory();
+  }
+}
+
+$("chatWorkspace").onclick = () => switchWorkspace(false);
+$("codingWorkspace").onclick = () => switchWorkspace(true);
+$("filesToggle").onclick = () => {
+  $("workspacePanel").hidden = !$("workspacePanel").hidden;
+  if (!$("workspacePanel").hidden) loadWorkspaceTree();
+};
+$("refreshWorkspace").onclick = loadWorkspaceTree;
+$("openProject").onclick = async () => {
+  const path = $("projectPath").value.trim();
+  if (!path) {
+    setStatus("Enter an absolute project folder path", true);
+    return;
+  }
+  try {
+    if (!currentId) await newConversation({ preserveProjectInput: true });
+    const project = await api(
+      `/api/conversations/${encodeURIComponent(currentId)}/project`,
+      { method: "POST", body: JSON.stringify({ path }) },
+    );
+    $("projectPath").value = project.project_root;
+    await loadWorkspaceTree();
+    setStatus(`Project opened: ${project.root}`);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+};
+$("runCommand").onclick = runApprovedCommand;
+
+providerSel.onchange = async () => {
+  const pid = providerSel.value;
+  if (!pid) return;
+  try {
+    await api(`/api/providers/${pid}/activate`, { method: "POST" });
+    await loadProviders();
+  } catch (err) { setStatus(err.message, true); }
+  await useProvider(pid);
+};
+
+$("fetch").onclick = () => loadModels(currentProviderId, { force: true });
+
+/* ---------------- providers: management modal ---------------- */
+function openModal() {
+  $("modal").classList.add("open");
+  renderCards();
+  if (!providers.length) showForm(null);
+}
+function closeModal() {
+  $("modal").classList.remove("open");
+  hideForm();
+}
+$("manage").onclick = openModal;
+$("manageSkills").onclick = async () => {
+  $("skillsModal").classList.add("open");
+  try { await loadSkills(); } catch (error) { $("skillCards").textContent = error.message; }
+};
+$("closeSkillsModal").onclick = () => $("skillsModal").classList.remove("open");
+$("skillsModal").addEventListener("mousedown", (event) => {
+  if (event.target.id === "skillsModal") $("skillsModal").classList.remove("open");
+});
+$("skillSelect").onchange = updateSkillPreview;
+$("closeModal").onclick = closeModal;
+$("modal").addEventListener("mousedown", (e) => { if (e.target.id === "modal") closeModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (conversationDrawer.classList.contains("open")) {
+      closeConversationDrawer(true);
+    }
+    closeModal();
+    $("skillsModal").classList.remove("open");
+    return;
+  }
+  if (e.key === "Tab" && conversationDrawer.classList.contains("open")) {
+    const focusable = [...conversationDrawer.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )].filter((element) => element.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+});
+
+function renderCards() {
+  const box = $("cards");
+  box.innerHTML = "";
+  if (!providers.length) {
+    box.innerHTML = '<div class="sub">No providers yet. Add one to start chatting.</div>';
+    return;
+  }
+  for (const p of providers) {
+    const card = document.createElement("div");
+    card.className = "card" + (p.is_active ? " active" : "");
+    card.innerHTML = `
+      <div class="row"><span class="name"></span><span class="badge"></span></div>
+      <dl>
+        <dt>API key</dt><dd class="k"></dd>
+        <dt>URL</dt><dd class="u"></dd>
+        <dt>Model</dt><dd class="m"></dd>
+      </dl>
+      <div class="actions">
+        <button class="act">Use</button>
+        <button class="edit">Edit</button>
+        <button class="del danger">Delete</button>
+      </div>`;
+    card.querySelector(".name").textContent = p.name;
+    const badge = card.querySelector(".badge");
+    badge.textContent = p.is_active ? "Active" : "Inactive";
+    badge.classList.toggle("on", p.is_active);
+    const status = document.createElement("span");
+    status.className = `status-pill ${p.valid === false ? "bad" : "ok"}`;
+    status.textContent = p.valid === false ? "Invalid key" : `Valid · ${p.model_count || 0} models`;
+    card.querySelector(".row").appendChild(status);
+    card.querySelector(".k").textContent = !p.has_key ? "none"
+      : p.key_readable ? p.key_masked : "unreadable — re-enter the key";
+    card.querySelector(".u").textContent = p.base_url;
+    card.querySelector(".m").textContent = p.default_model || "select from available models";
+    const act = card.querySelector(".act");
+    act.disabled = p.is_active;
+    act.onclick = async () => {
+      await api(`/api/providers/${p.id}/activate`, { method: "POST" });
+      await loadProviders();
+      await useProvider(p.id);
+    };
+    card.querySelector(".edit").onclick = () => showForm(p);
+    card.querySelector(".del").onclick = async () => {
+      if (!confirm(`Delete provider "${p.name}"? Its saved key is removed. Chats that used it will switch to the active provider.`)) return;
+      try {
+        await api(`/api/providers/${p.id}`, { method: "DELETE" });
+        delete modelCache[p.id];
+        await loadProviders();
+        await useProvider(currentProviderId);
+        loadList();
+      } catch (err) { alert(err.message); }
+    };
+    box.appendChild(card);
+  }
+}
+
+for (const [name, url] of PRESETS) {
+  const o = document.createElement("option");
+  o.value = url; o.textContent = name;
+  $("fPreset").appendChild(o);
+}
+$("fPreset").onchange = () => {
+  const opt = $("fPreset").selectedOptions[0];
+  if (!opt.value) return;
+  $("fUrl").value = opt.value;
+  if (!$("fName").value.trim() || PRESETS.some(([n]) => n === $("fName").value)) {
+    $("fName").value = opt.textContent;
+  }
+};
+
+function formMsg(text, kind = "") {
+  $("formMsg").textContent = text;
+  $("formMsg").className = kind;
+}
+
+function showForm(p) {
+  editingId = p ? p.id : null;
+  $("formTitle").textContent = p ? `Edit ${p.name}` : "Add API provider";
+  $("fPreset").value = "";
+  $("fName").value = p?.name || "";
+  $("fUrl").value = p?.base_url || "";
+  $("fKey").value = "";
+  $("fKeys").value = "";
+  $("fBudget").value = "";
+  $("fKey").placeholder = p?.has_key ? `${p.key_masked || "saved"} (leave blank to keep)` : "sk-…";
+  $("fModel").value = p?.default_model || "";
+  $("formModels").innerHTML = "";
+  formMsg("");
+  $("pform").hidden = false;
+  $("addProvider").hidden = true;
+  $("fName").focus();
+}
+
+function hideForm() {
+  $("pform").hidden = true;
+  $("addProvider").hidden = false;
+  $("fKey").value = "";
+  editingId = null;
+}
+
+$("addProvider").onclick = () => showForm(null);
+$("fCancel").onclick = hideForm;
+
+$("fTest").onclick = async () => {
+  formMsg("Testing…");
+  $("fTest").disabled = true;
+  try {
+    const { models } = await api("/api/providers/test", {
+      method: "POST",
+      body: JSON.stringify({
+        base_url: $("fUrl").value, api_key: $("fKey").value, provider_id: editingId,
+      }),
+    });
+    const dl = $("formModels");
+    dl.innerHTML = "";
+    for (const id of models) {
+      const o = document.createElement("option"); o.value = id; dl.appendChild(o);
+    }
+    if (!$("fModel").value && models.length) $("fModel").value = models[0];
+    formMsg(`Connected. ${models.length} models available.`, "ok");
+  } catch (err) {
+    formMsg(err.message, "bad");
+  } finally {
+    $("fTest").disabled = false;
+  }
+};
+
+$("pform").onsubmit = async (e) => {
+  e.preventDefault();
+  const lines = $("fKeys").value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const keyList = lines.length
+    ? JSON.stringify(lines.map((k) => ({ key: k, token_budget: Number($("fBudget").value || 0), used_tokens: 0 })))
+    : null;
+
+  const body = {
+    name: $("fName").value, base_url: $("fUrl").value,
+    api_key: $("fKey").value,
+    api_keys: keyList,
+    token_budget: Number($("fBudget").value || 0),
+    default_model: $("fModel").value,
+  };
+  $("fSave").disabled = true;
+  try {
+    const saved = editingId
+      ? await api(`/api/providers/${editingId}`, { method: "PATCH", body: JSON.stringify(body) })
+      : await api("/api/providers", { method: "POST", body: JSON.stringify(body) });
+    delete modelCache[saved.id];
+    hideForm();
+    await loadProviders();
+    if (saved.id === currentProviderId || providers.length === 1) await useProvider(saved.id);
+    loadList();
+  } catch (err) {
+    formMsg(err.message, "bad");
+  } finally {
+    $("fSave").disabled = false;
+  }
+};
+
+/* ---------------- conversations ---------------- */
+async function loadList() {
+  let rows = await api("/api/conversations");
+  if (codingAvailable) {
+    for (const conversation of rows) {
+      const savedMode = localStorage.getItem(`assistantMode:${conversation.id}`);
+      if (savedMode !== "chat" && savedMode !== "coding") continue;
+      if (savedMode !== conversation.workspace_type) {
+        const updated = await api(
+          `/api/conversations/${encodeURIComponent(conversation.id)}/workspace`,
+          {
+            method: "POST",
+            body: JSON.stringify({ workspace_type: savedMode }),
+          },
+        );
+        conversation.workspace_type = updated.workspace_type;
+        conversation.project_root = updated.project_root;
+      }
+      localStorage.removeItem(`assistantMode:${conversation.id}`);
+    }
+  }
+  rows = rows.filter(
+    (conversation) =>
+      conversation.workspace_type === (codingMode ? "coding" : "chat"),
+  );
+  $("chatListTitle").textContent = codingMode
+    ? "Coding conversations"
+    : "Chat conversations";
+  list.innerHTML = "";
+  if (!rows.length) {
+    const workspaceName = codingMode ? "coding" : "chat";
+    list.innerHTML = `<div style="padding:10px;color:#8b93a7;font-size:13px">No ${workspaceName} conversations yet.</div>`;
+    return;
+  }
+  for (const c of rows) {
+    const el = document.createElement("div");
+    el.className = "item" + (c.id === currentId ? " active" : "");
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.className = "conversation-open";
+    openButton.setAttribute("aria-current", c.id === currentId ? "true" : "false");
+    openButton.innerHTML = '<div class="meta"><div class="t"></div><div class="p"></div></div>';
+    openButton.querySelector(".t").textContent = c.title || "Untitled";
+    const providerModel = [c.provider_name, c.model].filter(Boolean).join(" · ");
+    const projectPath = c.project_root || "";
+    const projectName = projectPath.split(/[\\/]/).filter(Boolean).at(-1);
+    const projectSummary = codingMode && projectName
+      ? `Project: ${projectName}`
+      : "";
+    const tokenSummary =
+      `~${Number(c.input_tokens || 0).toLocaleString()} in · ` +
+      `${Number(c.output_tokens || 0).toLocaleString()} out tokens`;
+    openButton.querySelector(".p").textContent = [projectSummary, providerModel, tokenSummary]
+      .filter(Boolean)
+      .join(" · ");
+    openButton.onclick = () => {
+      closeConversationDrawer();
+      void openConversation(c.id);
+    };
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "x";
+    deleteButton.textContent = "×";
+    deleteButton.title = "Delete chat";
+    deleteButton.setAttribute("aria-label", `Delete ${c.title || "chat"}`);
+    deleteButton.onclick = async () => {
+      if (!confirm("Delete this chat?")) return;
+      await fetch(`/api/conversations/${c.id}`, { method: "DELETE" });
+      if (c.id === currentId) {
+        currentId = null;
+        resetFeed();
+        await loadWorkspaceTree();
+        await loadEditHistory();
+      }
+      loadList();
+    };
+    el.append(openButton, deleteButton);
+    list.appendChild(el);
+  }
+}
+
+async function newConversation({ preserveProjectInput = false } = {}) {
+  closeConversationDrawer();
+  conversationLoadVersion += 1;
+  const newWorkspaceType = codingMode ? "coding" : "chat";
+  if (codingMode && !preserveProjectInput) {
+    $("projectPath").value = "";
+    $("workspacePreviewPath").textContent = "";
+    $("workspacePreview").textContent = "";
+  }
+  const c = await api("/api/conversations", {
+    method: "POST",
+    body: JSON.stringify({
+      model: modelEl.value.trim(),
+      provider_id: currentProviderId,
+      workspace_type: newWorkspaceType,
+    }),
+  });
+  currentId = c.id;
+  resetFeed();
+  await loadList();
+  await loadWorkspaceTree();
+  await loadEditHistory();
+  setStatus(codingMode
+    ? "Coding chat created. Enter this chat's project path and select Open project."
+    : "Chat created.");
+  input.focus();
+}
+
+function resetFeed() {
+  feed.innerHTML = '<div class="empty">Start a conversation.</div>';
+  convTokens = 0;
+  convInputTokens = 0;
+  convOutputTokens = 0;
+  updateUsageBar();
+  footer.textContent = "Active chat: ~0 input · 0 output tokens";
+}
+
+async function openConversation(id) {
+  const loadVersion = ++conversationLoadVersion;
+  const data = await api(`/api/conversations/${id}`);
+  if (loadVersion !== conversationLoadVersion) return;
+  currentId = id;
+  const conv = data.conversation;
+  setWorkspaceMode(conv.workspace_type === "coding");
+  modelEl.value = conv.model || modelEl.value;
+  $("projectPath").value = conv.project_root || "";
+  // reopen the chat on the provider it was using, not the global default
+  const pid = providerById(conv.provider_id) ? conv.provider_id : activeProvider()?.id;
+  if (pid) useProvider(pid, { keepModel: true });
+  feed.innerHTML = "";
+  convTokens = 0;
+  convInputTokens = 0;
+  convOutputTokens = 0;
+  for (const m of data.messages) {
+    convTokens += m.tokens || 0;
+    if (m.role === "user") {
+      convInputTokens += m.tokens || 0;
+    } else if (m.role === "assistant") {
+      convOutputTokens += m.tokens || 0;
+    }
+    addBubble(m.role, m.content);
+  }
+  updateUsageBar();
+  footer.textContent =
+    `Active chat: ~${convInputTokens.toLocaleString()} input · ` +
+    `${convOutputTokens.toLocaleString()} output tokens`;
+  loadList();
+  await loadWorkspaceTree();
+  await loadEditHistory();
+  feed.scrollTop = feed.scrollHeight;
+  input.focus();
+}
+
+/* ---------------- rendering messages ---------------- */
+function addBubble(role, text) {
+  if (feed.querySelector(".empty")) feed.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + role;
+  const who = document.createElement("div");
+  who.className = "who";
+  who.textContent = role === "user" ? "You" : "AI";
+  const body = document.createElement("div");
+  body.className = "body";
+  if (role === "user") {
+    body.style.whiteSpace = "pre-wrap";
+    body.textContent = text;
+  } else {
+    body.innerHTML = render(text);
+  }
+  wrap.append(who, body);
+  feed.appendChild(wrap);
+  feed.scrollTop = feed.scrollHeight;
+  return body;
+}
+
+function showError(body, text) {
+  body.innerHTML = "";
+  const span = document.createElement("span");
+  span.className = "err";
+  span.textContent = text;          // provider errors are untrusted text
+  body.appendChild(span);
+}
+
+async function showEditReview(body, changes) {
+  let preview;
+  try {
+    preview = await api("/api/workspace/preview", {
+      method: "POST",
+      body: JSON.stringify({ changes, conv_id: currentId }),
+    });
+  } catch (err) {
+    const error = document.createElement("div");
+    error.className = "err";
+    error.textContent = `Could not prepare edit review: ${err.message}`;
+    body.appendChild(error);
+    return;
+  }
+
+  const review = document.createElement("section");
+  review.className = "edit-review";
+  const heading = document.createElement("h3");
+  heading.textContent = `Proposed edits · ${preview.changes.length} file${preview.changes.length === 1 ? "" : "s"}`;
+  review.appendChild(heading);
+
+  for (const change of preview.changes) {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = change.expected_sha256 ? change.path : `${change.path} · new file`;
+    details.appendChild(summary);
+    if (change.old_content !== null) {
+      const oldLabel = document.createElement("div");
+      oldLabel.textContent = "Current";
+      const oldCode = document.createElement("pre");
+      oldCode.textContent = change.old_content;
+      details.append(oldLabel, oldCode);
+    }
+    const newLabel = document.createElement("div");
+    newLabel.textContent = "Proposed";
+    const newCode = document.createElement("pre");
+    newCode.textContent = change.content;
+    details.append(newLabel, newCode);
+    review.appendChild(details);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "review-actions";
+  const approve = document.createElement("button");
+  approve.className = "primary";
+  approve.textContent = "Approve and apply";
+  const status = document.createElement("span");
+  status.className = "review-status";
+  approve.onclick = async () => {
+    const names = preview.changes.map((change) => change.path).join("\n");
+    if (!confirm(`Apply these proposed changes?\n\n${names}`)) return;
+    approve.disabled = true;
+    try {
+      const result = await api(`/api/workspace/${preview.review_id}/apply`, {
+        method: "POST",
+        body: JSON.stringify({ approved: true }),
+      });
+      status.textContent = `Applied ${result.files.length} file${result.files.length === 1 ? "" : "s"}`;
+      await loadWorkspaceTree();
+      await loadEditHistory();
+    } catch (err) {
+      status.textContent = err.message;
+      approve.disabled = false;
+    }
+  };
+  actions.append(approve, status);
+  review.appendChild(actions);
+  body.appendChild(review);
+}
+
+/* ---------------- sending ---------------- */
+async function send(overrideText = null) {
+  const text = (overrideText ?? input.value).trim();
+  if (!text || streaming) return;
+  if (!currentProviderId) { openModal(); return; }
+  if (!modelEl.value.trim()) { setStatus("pick a model first", true); modelEl.focus(); return; }
+  if (codingMode && (!currentId || !$("projectPath").value.trim())) {
+    setStatus("Create a Coding chat and open its project first", true);
+    return;
+  }
+  if (!currentId) await newConversation();
+
+  input.value = "";
+  input.style.height = "auto";
+  addBubble("user", text);
+  const body = addBubble("assistant", "");
+  const inputTokensEstimate = Math.max(1, Math.floor(text.length / 4));
+
+  streaming = true;
+  sendBtn.disabled = true;
+  setStatus(`streaming · ${providerById(currentProviderId)?.name || ""}`);
+
+  let buffer = "";
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conv_id: currentId,
+        content: text,
+        model: modelEl.value.trim(),
+        provider_id: currentProviderId,
+        system_prompt: codingMode ? CODING_SYSTEM_PROMPT : null,
+        coding_mode: codingMode,
+        skill_name: $("skillSelect").value || null,
+      }),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { msg = (await res.json()).detail || msg; } catch {}
+      throw new Error(msg);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let carry = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      carry += decoder.decode(value, { stream: true });
+
+      const parts = carry.split("\n\n");
+      carry = parts.pop();
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith("data:")) continue;
+        let obj;
+        try { obj = JSON.parse(line.slice(5).trim()); } catch { continue; }
+
+        if (obj.error) {
+          showError(body, obj.error);
+          setStatus("request failed", true);
+          continue;
+        }
+        if (obj.delta) {
+          buffer += obj.delta;
+          body.innerHTML = render(buffer);
+          feed.scrollTop = feed.scrollHeight;
+        }
+        if (obj.done) {
+          buffer = buffer.replace(/<OXION_EDITS>[\s\S]*?<\/OXION_EDITS>/g, "").trim();
+          body.innerHTML = render(buffer);
+          if (Array.isArray(obj.proposed_edits) && obj.proposed_edits.length) {
+            await showEditReview(body, obj.proposed_edits);
+          }
+          if (obj.usage) {
+            const inp = obj.usage.prompt_tokens ?? 0;
+            const out = obj.usage.completion_tokens ?? 0;
+            setStatus(`${obj.skill ? `${obj.skill.name} · ` : ""}in ${inp} · out ${out} · total ${obj.usage.total_tokens}`);
+          } else {
+            setStatus(`${obj.skill ? `${obj.skill.name} · ` : ""}~${obj.tokens} tokens (estimated)`);
+          }
+          convInputTokens += inputTokensEstimate;
+          convOutputTokens += obj.tokens || 0;
+          convTokens += inputTokensEstimate + (obj.tokens || 0);
+          updateUsageBar();
+          footer.textContent =
+            `Active chat: ~${convInputTokens.toLocaleString()} input · ` +
+            `${convOutputTokens.toLocaleString()} output tokens`;
+          loadDailyQuota(currentProviderId);
+        }
+      }
+    }
+  } catch (err) {
+    const fullError = err.message || String(err);
+    showError(body, `Request failed: ${fullError}`);
+    const retryRow = document.createElement("div");
+    retryRow.className = "retry-row";
+
+    const retryBtn = document.createElement("button");
+    retryBtn.textContent = "Retry";
+    retryBtn.onclick = () => {
+      body.innerHTML = "";
+      send(text);
+    };
+
+    retryRow.appendChild(retryBtn);
+
+    if (providers.length > 1) {
+      const altBtn = document.createElement("button");
+      altBtn.textContent = "Retry on another provider";
+      altBtn.onclick = async () => {
+        const currentIndex = providers.findIndex((p) => p.id === currentProviderId);
+        const nextProvider = providers[(currentIndex + 1) % providers.length];
+        if (nextProvider) {
+          currentProviderId = nextProvider.id;
+          providerSel.value = nextProvider.id;
+          await useProvider(nextProvider.id, { keepModel: true });
+          body.innerHTML = "";
+          send(text);
+        }
+      };
+      retryRow.appendChild(altBtn);
+    }
+
+    body.appendChild(retryRow);
+    setStatus("request failed", true);
+  } finally {
+    streaming = false;
+    sendBtn.disabled = false;
+    if (statusEl.textContent.startsWith("streaming")) setStatus("");
+    loadList();
+    input.focus();
+  }
+}
+
+$("new").onclick = newConversation;
+sendBtn.onclick = () => send();
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 200) + "px";
+  updateSkillPreview();
+});
+
+(async () => {
+  try {
+    const capabilities = await api("/api/capabilities");
+    codingAvailable = Boolean(capabilities.coding_workspaces);
+    $("codingWorkspace").hidden = !codingAvailable;
+    if (capabilities.hosted) {
+      $("keyHint").textContent =
+        "Encrypted on the server before storage. Keep the deployment encryption key private and unchanged.";
+    } else {
+      $("keyHint").textContent =
+        "Encrypted before storage. Leave blank for local servers.";
+    }
+    setWorkspaceMode(
+      codingAvailable && localStorage.getItem("assistantWorkspaceType") === "coding",
+    );
+    await loadProviders();
+    await loadSkills();
+    const p = activeProvider();
+    modelEl.value = p?.default_model || "gemma-2-2b";
+    if (p) useProvider(p.id, { keepModel: true });
+    else openModal();
+  } catch (err) { setStatus(err.message, true); }
+  loadList();
+  if (!codingAvailable) {
+    setStatus("Online Chat is ready. Coding workspaces run locally on your PC.");
+  }
+  input.focus();
+})();
+</script>
+</body>
+</html>

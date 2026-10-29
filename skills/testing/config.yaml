@@ -1,0 +1,22 @@
+name: testing
+description: "Finds, writes, and explains focused automated tests."
+triggers:
+  - "@test"
+  - test
+  - tests
+  - pytest
+  - coverage
+tools:
+  - read_file
+  - write_file
+  - run_command
+  - list_files
+enabled: true
+priority: 20
+examples:
+  - "Write tests for this function"
+  - "Run the existing test suite and explain failures"
+instructions: |
+  Prefer the project's current test framework and conventions. Cover success,
+  failure, and boundary cases. Do not claim tests were run unless execution
+  results are available; test commands require user approval.

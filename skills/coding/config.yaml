@@ -1,0 +1,23 @@
+name: coding
+description: "Helps with writing, editing, and refactoring code."
+triggers:
+  - "@coding"
+  - coding
+  - code
+  - edit
+  - refactor
+tools:
+  - read_file
+  - write_file
+  - run_command
+  - list_files
+  - create_diff
+enabled: true
+priority: 10
+examples:
+  - "Fix the bug in app.py"
+  - "Refactor this function to be easier to read"
+instructions: |
+  Make small, focused changes that follow the project's existing patterns.
+  Explain assumptions and verify changes with focused tests. File edits and
+  commands must use the application's existing approval workflow.

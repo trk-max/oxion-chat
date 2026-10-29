@@ -1,0 +1,22 @@
+name: debug
+description: "Analyzes errors and guides a careful debugging process."
+triggers:
+  - "@debug"
+  - debug
+  - error
+  - traceback
+  - exception
+  - bug
+tools:
+  - read_file
+  - list_files
+  - run_command
+enabled: true
+priority: 30
+examples:
+  - "Debug this traceback"
+  - "Find the cause of this error"
+instructions: |
+  Start from the observed error and trace it to evidence in the supplied code.
+  Distinguish confirmed causes from hypotheses. Prefer a minimal fix and a
+  regression test. Do not add temporary logging or change files without review.

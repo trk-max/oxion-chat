@@ -1,0 +1,11 @@
+name: skill_name
+description: "Describe what this skill does."
+triggers:
+  - "@skill_name"
+tools:
+  - read_file
+enabled: true
+priority: 0
+examples: []
+instructions: |
+  Add focused guidance for this skill.
