@@ -105,6 +105,10 @@ migrated. Re-enter provider keys on the online deployment. Keep the same
 `CHAT_ENCRYPTION_KEY` across deployments or saved online provider keys cannot
 be decrypted.
 
+Vercel's Python runtime is pinned to 3.12 in `.python-version`. Runtime
+dependencies are listed in `pyproject.toml` for Vercel's Python builder;
+`requirements.txt` also includes the local development and test tools.
+
 This deployment supports online **Chat**. Coding workspaces still access
 folders on the machine running the app; Vercel cannot access your PC's files,
 so project browsing and editing are deliberately unavailable in the hosted

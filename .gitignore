@@ -28,3 +28,8 @@ backend/sessions.sqlite3*
 backups/
 **/.venv/
 **/venv/
+.neon
+
+.vercel
+.env*
+!.env.example

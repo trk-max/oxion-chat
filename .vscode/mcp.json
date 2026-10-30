@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "Neon": {
+      "type": "http",
+      "url": "https://mcp.neon.tech/mcp?projectId=delicate-art-85394385"
+    }
+  }
+}
