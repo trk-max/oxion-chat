@@ -1668,9 +1668,7 @@ async def list_conversations(workspace_type: str | None = None):
     """List conversations, optionally filtered to Chat or Coding."""
     if workspace_type not in {None, "all", "chat", "coding"}:
         raise HTTPException(422, "workspace_type must be chat, coding, or all")
-    with db() as conn:
-        rows = conn.execute(
-            """SELECT c.id, c.title, c.model, c.provider_id, c.project_root,
+    query = """SELECT c.id, c.title, c.model, c.provider_id, c.project_root,
                       c.workspace_type, c.updated_at,
                       p.name AS provider_name,
                       (SELECT COALESCE(SUM(tokens),0) FROM messages m
@@ -1680,11 +1678,14 @@ async def list_conversations(workspace_type: str | None = None):
                       (SELECT COALESCE(SUM(tokens),0) FROM messages m
                         WHERE m.conv_id = c.id AND m.role='assistant') AS output_tokens
                FROM conversations c
-               LEFT JOIN providers p ON p.id = c.provider_id
-               WHERE (? IS NULL OR ? = 'all' OR c.workspace_type = ?)
-               ORDER BY c.updated_at DESC""",
-            (workspace_type, workspace_type, workspace_type),
-        ).fetchall()
+               LEFT JOIN providers p ON p.id = c.provider_id"""
+    parameters: tuple[str, ...] = ()
+    if workspace_type not in {None, "all"}:
+        query += "\n               WHERE c.workspace_type=?"
+        parameters = (workspace_type,)
+    query += "\n               ORDER BY c.updated_at DESC"
+    with db() as conn:
+        rows = conn.execute(query, parameters).fetchall()
     return [dict(r) for r in rows]
 
 
